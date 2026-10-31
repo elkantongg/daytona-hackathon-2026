@@ -26,4 +26,7 @@ ALLOW_LOCAL_EXECUTION = env("ALLOW_LOCAL_EXECUTION", "false").lower() in ("1", "
 
 NOSANA_LLM_URL = env("NOSANA_LLM_URL").rstrip("/")
 NOSANA_LLM_MODEL = env("NOSANA_LLM_MODEL")
+# Platform key (api.nosana.com) used only by scripts/nosana.py to manage the deployment.
+# It is never sent to the model endpoint, which runs on a third-party GPU node.
 NOSANA_API_KEY = env("NOSANA_API_KEY")
+NOSANA_LLM_KEY = env("NOSANA_LLM_KEY")

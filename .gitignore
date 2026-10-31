@@ -224,3 +224,4 @@ node_modules/
 frontend/dist/
 .DS_Store
 *.log
+backend/.wayfound-requirements.txt

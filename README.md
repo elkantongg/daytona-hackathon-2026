@@ -24,7 +24,7 @@ Pitch, judging-criteria mapping and demo script: **[PITCH.md](PITCH.md)** · Tea
 
 Two graph views make the graph's contribution visible: the **Impact graph** (incident → room → session → attendee → requirement → rooms that `PROVIDE` it) and the **Provenance graph** (verification ← recovery → incident, sessions, rooms, precedent).
 
-**Feasibility is decided only by deterministic code.** The LLM (Nosana, optional) only interprets free-text
+**Feasibility is decided only by deterministic code.** The LLM (on Nosana) only interprets free-text
 reports and words the explanation. It never certifies accessibility.
 
 ### Sponsor integration
@@ -35,8 +35,11 @@ reports and words the explanation. It never certifies accessibility.
 - **Daytona**: the engine ([backend/app/engine.py](backend/app/engine.py), standard library only) is shipped
   into a sandbox and executed for both `solve` and `verify`. The dashboard shows the sandbox id, exit code and
   timings for every run. One sandbox is reused (auto-stops after 30 idle minutes) so the demo stays fast.
-- **Nosana** (optional): set `NOSANA_LLM_URL` to an OpenAI-compatible endpoint (e.g. an Ollama deployment on
-  Nosana). Without it, a deterministic template is used and the UI says so.
+- **Nosana**: Wayfound's language model (Qwen 3.5 9B on Ollama) runs on a Nosana GPU. It turns a free-text
+  incident report into the affected room and writes the plain-English explanation of each plan. It never
+  decides feasibility. `backend/scripts/nosana.py up` deploys Nosana's official Ollama template through the
+  Nosana API, waits for the endpoint, and writes it to `.env`; `down` stops it. Without Nosana, keyword
+  matching and a deterministic template are used and the header says *Nosana off*.
 
 ### Hard constraints checked
 

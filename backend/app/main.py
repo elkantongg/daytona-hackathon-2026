@@ -6,7 +6,11 @@ import json
 import threading
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -237,3 +241,23 @@ def provenance_graph(ra_id: str):
 @app.get("/api/history")
 def history():
     return graph.history(20)
+
+
+# ---------------------------------------------------------------- dashboard
+# When the frontend has been built (npm run build), serve it from here so the whole
+# app runs on one port. This is how it runs inside a Daytona sandbox.
+
+DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+if (DIST / "index.html").exists():
+    app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def dashboard(path: str):
+        if path.startswith("api/"):
+            raise HTTPException(404, "Not found")
+        f = (DIST / path).resolve()
+        if path and f.is_file() and DIST in f.parents:
+            return FileResponse(f)
+        return FileResponse(DIST / "index.html")
+

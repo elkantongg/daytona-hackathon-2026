@@ -1,7 +1,7 @@
 """Language layer: incident interpretation and plain-English explanations.
 
-Uses a Nosana-hosted LLM (any OpenAI-compatible endpoint, e.g. an Ollama
-deployment on Nosana) when NOSANA_LLM_URL is set. The LLM only words things;
+Uses an LLM served from a Nosana GPU deployment (Ollama; any OpenAI-compatible
+endpoint also works) when NOSANA_LLM_URL is set. The LLM only words things;
 it never decides feasibility. Without Nosana, deterministic fallbacks are used
 and the response says so.
 """
@@ -21,19 +21,32 @@ def enabled() -> bool:
 
 
 def _chat(system: str, user: str, max_tokens: int = 300) -> str:
-    url = config.NOSANA_LLM_URL
-    if not url.endswith("/chat/completions"):
-        url = url + ("/chat/completions" if url.endswith("/v1") else "/v1/chat/completions")
+    base = config.NOSANA_LLM_URL
     headers = {"Content-Type": "application/json"}
-    if config.NOSANA_API_KEY:
-        headers["Authorization"] = f"Bearer {config.NOSANA_API_KEY}"
-    r = httpx.post(url, headers=headers, timeout=25, json={
-        "model": config.NOSANA_LLM_MODEL or "llama3.1:8b",
-        "temperature": 0.1, "max_tokens": max_tokens,
-        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+    if config.NOSANA_LLM_KEY:
+        headers["Authorization"] = f"Bearer {config.NOSANA_LLM_KEY}"
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    model = config.NOSANA_LLM_MODEL or "qwen3.5:9b"
+    if "/v1" not in base:
+        # Native Ollama API: lets us switch off "thinking" so replies are short and fast.
+        r = httpx.post(f"{base}/api/chat", headers=headers, timeout=60, json={
+            "model": model, "messages": messages, "stream": False, "think": False,
+            "options": {"temperature": 0.1, "num_predict": max_tokens},
+        })
+        if r.status_code != 404:
+            r.raise_for_status()
+            return _clean(r.json()["message"]["content"])
+        base = f"{base}/v1"
+    url = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
+    r = httpx.post(url, headers=headers, timeout=60, json={
+        "model": model, "temperature": 0.1, "max_tokens": max_tokens, "messages": messages,
     })
     r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"].strip()
+    return _clean(r.json()["choices"][0]["message"]["content"])
+
+
+def _clean(text: str) -> str:
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()
 
 
 def interpret(text: str, venues: list[dict]) -> dict:

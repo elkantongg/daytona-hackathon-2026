@@ -39,7 +39,7 @@ the same room fails, it starts from what worked last time.
 | **Completeness**: functional MVP | Full loop live: detect → trace → check → recover → approve → verify, plus history, against real Neo4j and real Daytona. No mocks in the demo path. |
 | **Innovation**: original idea | Recovery framed around the *exception*, not the majority; precedent memory that re-validates itself; impact and provenance as graphs. |
 | **Real-life problem solving** | Last-minute venue loss is common for university events; the failure mode (capacity yes, access no) is concrete and human. |
-| **Sponsor usage** | **Neo4j**: source of truth, the path query, `PROVIDES` reasoning, memory and provenance. **Daytona**: every solve and every verification runs in a sandbox (id and exit code on screen). **Nosana**: incident interpretation and explanations when connected. |
+| **Sponsor usage** | **Neo4j**: source of truth, the path query, `PROVIDES` reasoning, memory and provenance. **Daytona**: every solve and every verification runs in a sandbox (id and exit code on screen). **Nosana**: a Qwen 3.5 9B model on a Nosana GPU reads the free-text incident report and writes each plan's explanation; the header shows *Nosana LLM* and each explanation is labelled with its source. |
 
 ## How we meet Neo4j's "one visible loop"
 
