@@ -88,7 +88,9 @@ def explain(proposal: dict, quick_fix: dict | None, venues: dict, memory: dict |
         try:
             text = _chat(
                 "You explain a venue-recovery plan to an event organiser in at most 3 short sentences. "
-                "Use only the facts given. Never claim a venue is accessible unless the facts say so. "
+                "Use only the facts given. rejectedQuickFixProblems describe a capacity-only quick fix that was REJECTED; "
+                "the recommended plan in moves fixes them and satisfies every hard constraint. "
+                "Never claim a venue is accessible unless the facts say so. "
                 "Never invent numbers.",
                 json.dumps(facts), max_tokens=180)
             return {"text": text, "by": "nosana"}
@@ -109,7 +111,7 @@ def _facts(proposal, quick_fix, venues, memory=None):
         "moves": [{"session": m["sessionTitle"], "from": venues.get(m["from"], {}).get("name", m["from"]),
                    "to": m["toName"], "attendees": m["attendees"], "capacity": m["capacity"],
                    "why": m["reason"]} for m in proposal.get("moves", [])],
-        "quickFixProblems": [v["detail"] for v in (quick_fix or {}).get("violations", [])],
+        "rejectedQuickFixProblems": [v["detail"] for v in (quick_fix or {}).get("violations", [])],
         "infeasibleReason": proposal.get("reason"),
         "remainingViolations": len(proposal.get("violationsAfter", [])),
     }
@@ -120,7 +122,7 @@ def _template(f) -> str:
         return (f"No feasible plan exists with the venues currently available. {f['infeasibleReason']} "
                 "Re-open a venue or relax a requirement with the affected attendee before proceeding.")
     parts = []
-    if f["quickFixProblems"]:
+    if f["rejectedQuickFixProblems"]:
         parts.append(f"The capacity-only quick fix fails: {f['quickFixProblems'][0]}.")
     moves = "; ".join(f"{m['session']} moves from {m['from']} to {m['to']} ({m['attendees']}/{m['capacity']} seats)"
                       for m in f["moves"])
