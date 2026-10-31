@@ -10,6 +10,38 @@ independently verifies the result and records the evidence in Neo4j.
 
 Pitch, judging-criteria mapping and demo script: **[PITCH.md](PITCH.md)** · Team proposal: [docs/Exception_One_Hackathon_Team_Proposal.pdf](docs/Exception_One_Hackathon_Team_Proposal.pdf)
 
+**Live on Daytona:** https://8000-12d5996b-5056-41e0-bac0-f6de994a6a38.daytonaproxy01.eu (Daytona shows a one-time
+preview warning; click *I Understand, Continue*).
+
+## Sponsor integration: Daytona, Neo4j, Nosana
+
+All three sponsors are integrated and were verified end to end on 31 Oct 2026. Each has a real job in the
+product, not a token call.
+
+| Sponsor | Its job in Wayfound | Code | Verified result |
+|---|---|---|---|
+| **Daytona** | Runs the constraint solver and the post-change verifier in an isolated sandbox for every recovery; also hosts the whole app (API, dashboard, Neo4j, engine) at the public link above | [executor.py](backend/app/executor.py), [engine.py](backend/app/engine.py), [scripts/daytona_app.py](backend/scripts/daytona_app.py) | Recovery in sandbox `abff8f36…`, exit 0: keynote → Hall B. Verification in a sandbox: **0 unresolved hard constraints** (35 checks). The sandbox id and exit code are shown on screen for every run. |
+| **Neo4j** | Source of truth for the event graph; the path query that finds who a closure reaches and which rooms `PROVIDE` what they need; audit trail (`RecoveryAction`, `REASSIGNED`, `VERIFIED_BY`); memory of verified fixes (`INFORMED_BY`) | [graph.py](backend/app/graph.py) | Neo4j AuraDB 5.27: trace found 160 attendees and 1 hard requirement; second run reused the verified precedent, or rejected it with a reason when it no longer held. |
+| **Nosana** | A Qwen 3.5 9B model (Ollama) on a Nosana RTX 3090 GPU reads free-text incident reports and writes the plain-English explanation of each plan. It never decides feasibility. | [narrator.py](backend/app/narrator.py), [scripts/nosana.py](backend/scripts/nosana.py) | Deployment `BjEWJiaajTYybjsdgy8XAgW2Bu2rcoVkXJ1uxgenjbPq` (RUNNING). "Facilities just closed Lecture Theatre 1 because a pipe burst" → `LT1`, `by: nosana`; explanations labelled *Nosana LLM* in the UI. |
+
+### Known limitation and how we handled it
+
+Our Daytona organisation is on a **restricted network tier (Tier 1/2)**. Sandboxes on these tiers can only reach
+an allow-list of essential services (package registries, GitHub, some AI providers), and this cannot be
+overridden per sandbox ([Daytona docs: tier-based network restrictions](https://www.daytona.io/docs/en/network-limits/#tier-based-network-restrictions)).
+We confirmed it from inside the sandbox: Neo4j Aura (`*.databases.neo4j.io`) and the Nosana GPU node
+(`*.node.k8s.prd.nos.ci`) both time out, and `update_network_settings` returns *"Network access is restricted and
+cannot be overridden at the sandbox level."*
+
+So there are two ways to run Wayfound, and between them every sponsor is used for real:
+
+| Where it runs | Daytona | Neo4j | Nosana |
+|---|---|---|---|
+| **Laptop** (`./dev.sh`): the main demo | Solver and verifier run in Daytona sandboxes | Neo4j AuraDB | Live Qwen 3.5 model on Nosana |
+| **Daytona-hosted** (public link above) | The whole app runs in a Daytona sandbox; the engine runs in that same sandbox | Neo4j 5 Community **inside** the sandbox (built from the official `neo4j:5-community` image), because Aura is unreachable | Unreachable from the sandbox on this tier, so it falls back to keyword matching and a deterministic template, and the header says *Nosana off* |
+
+On Daytona Tier 3+ the hosted version uses Aura and Nosana too: `uv run python scripts/daytona_app.py deploy --neo4j aura`.
+
 ## How it works
 
 | Step | What happens | Where |
