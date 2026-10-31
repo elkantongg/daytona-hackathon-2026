@@ -21,6 +21,9 @@ NEO4J_DATABASE = env("NEO4J_DATABASE") or None
 DAYTONA_API_KEY = env("DAYTONA_API_KEY")
 DAYTONA_API_URL = env("DAYTONA_API_URL")
 DAYTONA_TARGET = env("DAYTONA_TARGET")
+# Set by scripts/daytona_app.py when the whole app is hosted in a Daytona sandbox: the engine
+# then runs in that same sandbox (restricted tiers can't reach a second sandbox's toolbox).
+HOSTED_SANDBOX_ID = env("WAYFOUND_SANDBOX_ID")
 # Off by default: the demo must prove execution happened in Daytona.
 ALLOW_LOCAL_EXECUTION = env("ALLOW_LOCAL_EXECUTION", "false").lower() in ("1", "true", "yes")
 

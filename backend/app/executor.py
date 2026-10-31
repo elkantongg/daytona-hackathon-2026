@@ -31,12 +31,17 @@ class ExecutionError(RuntimeError):
 
 
 def mode() -> str:
+    if config.HOSTED_SANDBOX_ID:
+        return "hosted"
     if config.DAYTONA_API_KEY:
         return "daytona"
     return "local" if config.ALLOW_LOCAL_EXECUTION else "unconfigured"
 
 
 def status() -> dict:
+    if mode() == "hosted":
+        return {"mode": "daytona", "sandboxId": config.HOSTED_SANDBOX_ID, "state": "ready",
+                "detail": "App and engine run in this Daytona sandbox"}
     sb = _sandbox
     return {"mode": mode(), "sandboxId": getattr(sb, "id", None), **_status}
 
@@ -91,7 +96,7 @@ def _get_sandbox():
 
 
 def warm_up() -> None:
-    if mode() != "daytona":
+    if mode() != "daytona":  # "hosted" needs no second sandbox
         return
     try:
         with _lock:
@@ -109,13 +114,15 @@ def run_engine(payload: dict) -> tuple[dict, dict]:
         raise ExecutionError("DAYTONA_API_KEY is not set. Add it to .env (or set ALLOW_LOCAL_EXECUTION=true "
                              "for offline development only).")
 
-    if m == "local":
+    if m in ("local", "hosted"):
         proc = subprocess.run([sys.executable, "-I", str(ENGINE_PATH)], input=json.dumps(payload),
                               capture_output=True, text=True, timeout=60)
         if proc.returncode:
             raise ExecutionError(proc.stderr[-2000:])
         result = _parse(proc.stdout)
-        return result, {"engine": "local", "sandboxId": None, "exitCode": proc.returncode,
+        hosted = m == "hosted"
+        return result, {"engine": "daytona" if hosted else "local",
+                        "sandboxId": config.HOSTED_SANDBOX_ID if hosted else None, "exitCode": proc.returncode,
                         "elapsedMs": round((time.perf_counter() - started) * 1000)}
 
     with _lock:

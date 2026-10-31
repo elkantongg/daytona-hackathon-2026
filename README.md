@@ -64,6 +64,18 @@ Without a Daytona key, recovery is disabled and the dashboard says why. For offl
 
 API docs: http://localhost:8010/docs
 
+### Run it on Daytona (public link)
+
+```bash
+cd backend && uv run python scripts/daytona_app.py deploy
+```
+
+This builds a Daytona sandbox from Neo4j's official image and runs the Neo4j database, the API, the
+dashboard and the constraint engine all inside it, then prints a public preview URL (Daytona shows a one-time
+warning page; click *I Understand, Continue*). It works on Daytona's restricted network tiers. On Tier 3+,
+`--neo4j aura` uses the Aura instance and the Nosana model from `.env` instead. `url`, `logs`, `stop` and
+`delete` manage it. Anyone with the link can use the demo.
+
 ## Demo
 
 The three-minute script, judging-criteria mapping and likely questions are in [PITCH.md](PITCH.md).
