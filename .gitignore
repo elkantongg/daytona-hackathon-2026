@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Wayfound
+node_modules/
+frontend/dist/
+.DS_Store
+*.log
