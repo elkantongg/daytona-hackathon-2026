@@ -82,6 +82,17 @@ def _get_sandbox():
         except Exception:
             _sandbox = None
 
+    # Reuse this app's solver sandbox from a previous run instead of piling up new ones.
+    from daytona import ListSandboxesQuery
+    for existing in _client.list(ListSandboxesQuery(labels={"app": "wayfound", "purpose": "venue-recovery-solver"})):
+        state = str(existing.state).lower()
+        if state.endswith(("started", "stopped")):
+            if not state.endswith("started"):
+                _status.update(state="starting", detail="Restarting the existing sandbox")
+                existing.start(timeout=120)
+            _sandbox = existing
+            return _sandbox
+
     _status.update(state="creating", detail="Creating Daytona sandbox")
     _sandbox = _client.create(
         CreateSandboxFromSnapshotParams(
